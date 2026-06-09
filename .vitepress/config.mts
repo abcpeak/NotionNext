@@ -51,7 +51,7 @@ function toDocLink(repoPath: string) {
   return link
 }
 
-function getRecentUpdatedDocs(limit = 5) {
+function getUpdatedDocs() {
   const trackedDocs = execFileSync('git', ['ls-files', 'docs'], {
     cwd: projectRoot,
     encoding: 'utf8'
@@ -77,15 +77,19 @@ function getRecentUpdatedDocs(limit = 5) {
       return {
         link: toDocLink(repoPath),
         title: getMarkdownTitle(filePath),
-        updatedAt: Math.floor(getLastUpdatedAt(filePath))
+        updatedAt: Math.floor(getLastUpdatedAt(filePath)),
+        isIndex: repoPath.endsWith('/index.md')
       }
     })
-    .filter((item): item is { link: string; title: string; updatedAt: number } => Boolean(item))
+    .filter(
+      (item): item is { link: string; title: string; updatedAt: number; isIndex: boolean } =>
+        Boolean(item)
+    )
     .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, limit)
 }
 
-const recentUpdatedDocs = getRecentUpdatedDocs()
+const updatedDocs = getUpdatedDocs()
+const recentUpdatedDocs = updatedDocs.filter((doc) => !doc.isIndex).slice(0, 5)
 
 export default defineConfig({
   title: 'NotionNext 使用说明',
@@ -112,6 +116,7 @@ export default defineConfig({
   },
   themeConfig: {
     logo: '/brand/notionnext-logo.png',
+    updatedDocs,
     recentUpdatedDocs,
     nav: [
       { text: '开始搭建', link: '/user-guide/start-here', activeMatch: '/user-guide/' },
